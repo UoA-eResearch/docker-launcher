@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import docker
-from bottle import get, run, redirect, request
+from bottle import get, run, redirect, request, default_app
 
 image="rocker/tidyverse"
 internal_port="8787/tcp"
@@ -17,4 +17,7 @@ def index():
   hostname = request.urlparts.netloc.replace(":" + str(request.urlparts.port), "")
   redirect("http://{}:{}".format(hostname, port))
 
-run(host='0.0.0.0', port=3040)
+application = default_app()
+
+if __name__ == "__main__":
+  run(host='0.0.0.0', port=3040)
