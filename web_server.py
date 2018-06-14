@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import docker
-from bottle import get, post, run, redirect, request, default_app, static_file
+from bottle import hook, get, post, run, redirect, request, response, default_app, static_file
 import os
 import time
 
@@ -17,6 +17,10 @@ def getTokenFromContainerLogs(container):
       if index > 0:
         token = line[index:]
         return token
+
+@hook('after_request')
+def enable_cors():
+    response.headers['Access-Control-Allow-Origin'] = '*'
 
 @get('/running')
 def running():
