@@ -1,23 +1,46 @@
 #!/usr/bin/env python
 import docker
-from bottle import get, run, redirect, request, default_app
+from bottle import get, post, run, redirect, request, default_app, static_file
+import os
+import time
 
-image="rocker/tidyverse"
+DEFAULT_IMAGE="jupyter/datascience-notebook"
 internal_port="8787/tcp"
 
 client = docker.from_env()
 
-@get('/')
+def getTokenFromContainerLogs(container):
+  for chunk in container.logs(stream=True):
+    for line in chunk.split("\n"):
+      print(line)
+      index = line.find("?token=")
+      if index > 0:
+        token = line[index:]
+        return token
+
+@post('/')
 def index():
-  # None = random host port
-  container = client.containers.run(image, ports={internal_port: None}, detach = True)
+  imageName = request.params.get("image", DEFAULT_IMAGE)
+  container = client.containers.run(imageName, publish_all_ports=True, detach = True)
+  token = ""
+  if "jupyter" in imageName:
+    token = getTokenFromContainerLogs(container)
   container.reload()
-  port = container.attrs['NetworkSettings']['Ports'][internal_port][0]['HostPort']
+  port = container.attrs['NetworkSettings']['Ports'].values()[0][0]['HostPort']
   print("Spawned container on port {}. Container status: {}".format(port, container.status))
   hostname = request.urlparts.netloc.replace(":" + str(request.urlparts.port), "")
-  redirect("http://{}:{}".format(hostname, port))
+  return "http://{}:{}/{}".format(hostname, port, token)
 
-application = default_app()
+port = int(os.environ.get('PORT', 8080))
 
 if __name__ == "__main__":
-  run(host='0.0.0.0', port=3040)
+  try:
+    try:
+      run(host='0.0.0.0', port=port, debug=True, server='gunicorn', workers=8, reloader=True)
+    except ImportError:
+      run(host='0.0.0.0', port=port, debug=True, reloader=True)
+  except Exception as e:
+    logger.error(e)
+    sys.stdin.readline()
+
+app = default_app()
