@@ -18,6 +18,17 @@ def getTokenFromContainerLogs(container):
         token = line[index:]
         return token
 
+@get('/running')
+def running():
+  containers = {}
+  for container in client.containers.list():
+    containers[container.name] = {
+      "image": container.image.attrs["RepoTags"][0],
+      "status": container.status,
+      "ports": container.attrs["NetworkSettings"]["Ports"]
+    }
+  return containers
+
 @post('/')
 def index():
   imageName = request.params.get("image", DEFAULT_IMAGE)
