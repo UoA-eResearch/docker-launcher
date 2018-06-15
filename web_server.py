@@ -51,9 +51,9 @@ port = int(os.environ.get('PORT', 8080))
 if __name__ == "__main__":
   try:
     try:
-      run(host='0.0.0.0', port=port, debug=True, server='gunicorn', workers=8, reloader=True)
+      run(host='0.0.0.0', port=port, debug=True, server='gunicorn', workers=8, reloader=True, timeout=1200)
     except ImportError:
-      run(host='0.0.0.0', port=port, debug=True, reloader=True)
+      run(host='0.0.0.0', port=port, debug=True, reloader=True, timeout=1200)
   except Exception as e:
     logger.error(e)
     sys.stdin.readline()
